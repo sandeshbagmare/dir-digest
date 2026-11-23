@@ -1,23 +1,23 @@
-# dir-digest
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sandeshbagmare/dir-digest/main/assets/banner.svg" width="100%" alt="dir-digest: one hash for a directory tree, identical on every OS">
+</p>
 
-One hash for a whole directory tree — the same hash on every machine, in any order.
+<p align="center">
+  <a href="https://pypi.org/project/dir-digest/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/dir-digest.svg"></a>
+  <a href="https://pypi.org/project/dir-digest/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/dir-digest.svg"></a>
+  <a href="https://pypi.org/project/dir-digest/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/dir-digest.svg"></a>
+  <a href="https://github.com/sandeshbagmare/dir-digest/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sandeshbagmare/dir-digest/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/sandeshbagmare/dir-digest/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/pypi/l/dir-digest.svg"></a>
+  <a href="https://sandeshbagmare.github.io/dir-digest/"><img alt="docs" src="https://img.shields.io/badge/docs-online-2ea44f.svg"></a>
+  <a href="https://pypi.org/project/dir-digest/"><img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-2ea44f.svg"></a>
+</p>
 
-[![PyPI](https://img.shields.io/pypi/v/dir-digest.svg)](https://pypi.org/project/dir-digest/)
-[![Python](https://img.shields.io/pypi/pyversions/dir-digest.svg)](https://pypi.org/project/dir-digest/)
-[![tests](https://github.com/sandeshbagmare/dir-digest/actions/workflows/ci.yml/badge.svg)](https://github.com/sandeshbagmare/dir-digest/actions/workflows/ci.yml)
-[![license](https://img.shields.io/pypi/l/dir-digest.svg)](https://github.com/sandeshbagmare/dir-digest/blob/main/LICENSE)
+<h3 align="center">one hash for a directory tree, identical on every OS</h3>
+<p align="center"><em>Standard library only. No runtime dependencies. Python 3.9+.</em></p>
 
-```console
-$ dir-digest ./src
-9f2c1a3e5b0d7c48…            # use it as a cache key or a build fingerprint
-$ dir-digest . --files       # or per file
-8bf5a385…  a.txt
-```
-
-A digest that changes when the bytes change and stays put when only the mtimes,
-the file creation order or the path separator change. That is what makes it usable as
-a cache key in CI: `dir-digest src` gives the same value on Linux, macOS and Windows
-for the same tree.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sandeshbagmare/dir-digest/main/assets/how.svg" width="720" alt="how dir-digest fits in">
+</p>
 
 ## Install
 
