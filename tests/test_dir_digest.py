@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from dir_digest import IgnoreRules, digest_tree, file_digests
+from dir_digest import IgnoreRules, _walk, digest_tree, file_digests
 
 
 def build(root, files):
@@ -237,3 +237,87 @@ class TestCommandLine:
         monkeypatch.chdir(tmp_path)
         assert self.run([]) == 0
         assert len(capsys.readouterr().out.strip()) == 64
+
+
+class TestRigour:
+    """Patterns and paths that the first pass did not exercise."""
+
+    def test_a_double_star_inside_a_pattern(self):
+        from dir_digest import _translate
+
+        assert _translate("a**b") == "a.*b"
+        assert _translate("**/x") == "(?:.*/)?x"
+        assert _translate("x/**") == "x/.*"
+
+    def test_a_negated_character_class(self):
+        from dir_digest import _translate
+
+        assert _translate("[!ab].txt") == r"[^ab]\.txt"
+
+    def test_an_unclosed_character_class(self):
+        from dir_digest import _translate
+
+        assert _translate("a[b") == r"a\[b"
+
+    def test_patterns_that_reduce_to_nothing(self):
+        assert IgnoreRules(["!", "/", "   ", "# comment"]).rules == []
+
+    def test_a_negation_keeps_a_file(self, tmp_path):
+        build(tmp_path, {"keep.txt": "x", "drop.txt": "y"})
+        rules = IgnoreRules(["*.txt", "!keep.txt"])
+        assert [name for name, _ in _walked(tmp_path, rules)] == ["keep.txt"]
+
+    def test_a_directory_only_pattern(self, tmp_path):
+        build(tmp_path, {"build/a.txt": "x", "keep/b.txt": "y", "build.txt": "z"})
+        rules = IgnoreRules(["build/"])
+        names = [name for name, _ in _walked(tmp_path, rules)]
+        assert names == ["build.txt", "keep/b.txt"]
+
+    def test_an_anchored_pattern(self, tmp_path):
+        build(tmp_path, {"a.log": "x", "sub/a.log": "y"})
+        rules = IgnoreRules(["/a.log"])
+        assert [name for name, _ in _walked(tmp_path, rules)] == ["sub/a.log"]
+
+    @pytest.mark.skipif(os.name == "nt", reason="symlinks need a privilege on Windows")
+    def test_a_symlinked_file_is_not_followed(self, tmp_path):
+        build(tmp_path, {"real.txt": "x"})
+        (tmp_path / "link.txt").symlink_to(tmp_path / "real.txt")
+        rules = IgnoreRules([])
+        assert [name for name, _ in _walked(tmp_path, rules)] == ["real.txt"]
+
+
+def _walked(root, rules):
+    from dir_digest import _walk
+
+    return _walk(root, rules, False)
+
+
+class TestRigour2:
+    """Symlink handling and the error path of the CLI."""
+
+    def test_a_symlink_is_skipped_but_followed_on_request(self, tmp_path, monkeypatch):
+        from pathlib import Path
+
+        (tmp_path / "a.txt").write_text("x", encoding="utf-8")
+        rules = IgnoreRules()
+        monkeypatch.setattr(Path, "is_symlink", lambda self: self.name == "a.txt", raising=True)
+        assert _walk(tmp_path, rules, False) == []
+        assert [name for name, _ in _walk(tmp_path, rules, True)] == ["a.txt"]
+
+    def test_a_root_that_is_not_a_directory_exits_two(self, tmp_path, capsys):
+        from dir_digest.__main__ import main
+
+        path = tmp_path / "file.txt"
+        path.write_text("x", encoding="utf-8")
+        assert main([str(path)]) == 2
+        assert "not a directory" in capsys.readouterr().err
+
+    def test_an_oserror_while_hashing_exits_two(self, tmp_path, monkeypatch, capsys):
+        from dir_digest import __main__ as cli
+
+        def refuse(*args, **kwargs):
+            raise PermissionError("denied")
+
+        monkeypatch.setattr(cli, "file_digests", refuse)
+        assert cli.main([str(tmp_path), "--files"]) == 2
+        assert "denied" in capsys.readouterr().err
